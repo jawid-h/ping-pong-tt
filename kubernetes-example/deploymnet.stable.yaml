@@ -1,0 +1,21 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pong-server-stable
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: pong-server
+      track: stable
+  template:
+    metadata:
+      labels:
+        app: pong-server
+        track: stable
+    spec:
+      containers:
+      - name: pong-server
+        image: company-docker-registry/pong-server:stable
+        ports:
+        - containerPort: 4433

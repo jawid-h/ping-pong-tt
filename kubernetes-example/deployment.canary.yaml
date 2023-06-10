@@ -1,0 +1,21 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pong-server-canary
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: pong-server
+      track: canary
+  template:
+    metadata:
+      labels:
+        app: pong-server
+        track: canary
+    spec:
+      containers:
+      - name: pong-server
+        image: company-docker-registry/pong-server:canary
+        ports:
+        - containerPort: 4433
