@@ -1,9 +1,5 @@
-use std::{
-    net::{IpAddr, SocketAddr},
-    time::Duration,
-};
+use std::net::{IpAddr, SocketAddr};
 
-use tokio::time::sleep;
 use wtransport::{tls::Certificate, Endpoint, ServerConfig};
 
 use crate::{
@@ -160,12 +156,10 @@ mod tests {
 
         let message = Message::new_request("Ping!".to_string());
 
-        let delayed_client_execution = async {
-            sleep(Duration::from_millis(800)).await;
-            ping_client.send_message(&message, times).await
-        };
-
-        let (_, _) = tokio::join!(pong_server.serve(), delayed_client_execution);
+        let (_, _) = tokio::join!(
+            pong_server.serve(),
+            ping_client.send_message(&message, times)
+        );
 
         let inbox = ping_client.get_indbox();
 
@@ -210,12 +204,10 @@ mod tests {
 
         let message = Message::new_request("Ping!".to_string());
 
-        let delayed_client_execution = async {
-            sleep(Duration::from_millis(800)).await;
-            ping_client.send_message(&message, times).await
-        };
-
-        let (_, _) = tokio::join!(pong_server.serve(), delayed_client_execution);
+        let (_, _) = tokio::join!(
+            pong_server.serve(),
+            ping_client.send_message(&message, times)
+        );
 
         let inbox = ping_client.get_indbox();
 
@@ -260,12 +252,10 @@ mod tests {
 
         let message = Message::new_request("Ping!".to_string());
 
-        let delayed_client_execution = async {
-            sleep(Duration::from_millis(800)).await;
-            ping_client.send_message(&message, times).await
-        };
-
-        let (_, _) = tokio::join!(pong_server.serve(), delayed_client_execution);
+        let (_, _) = tokio::join!(
+            pong_server.serve(),
+            ping_client.send_message(&message, times)
+        );
 
         let inbox = ping_client.get_indbox();
 
