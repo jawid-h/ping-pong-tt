@@ -54,6 +54,8 @@ impl PongServer {
     ///
     /// * `Result<(), ServerError>` - The result of running the server.
     pub async fn serve(&self) -> Result<(), ServerError> {
+        // Build the server configuration.
+        // The configuration is happening here due to limitations of `wttransport` crate
         let certificate = Certificate::load(
             &self.config.certificate_path,
             &self.config.certificate_key_path,
