@@ -1,0 +1,11 @@
+[package]
+name = "client"
+version = "0.1.0"
+edition = "2021"
+workspace = ".."
+
+[dependencies]
+thiserror = "1.0.40"
+common = { path = "../common" }
+tokio = { version = "1.28.1", features = ["rt", "rt-multi-thread", "macros"]}
+wtransport = { git = "https://github.com/BiagioFesta/wtransport.git", features = ["dangerous-configuration"] }
