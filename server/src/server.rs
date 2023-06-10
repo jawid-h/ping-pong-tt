@@ -110,7 +110,6 @@ impl PongServer {
 
             // Exit the loop if we are running tests.
             if cfg!(test) {
-                sleep(Duration::from_millis(200)).await;
                 break Ok(());
             }
         }
