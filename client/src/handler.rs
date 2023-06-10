@@ -27,6 +27,7 @@ pub async fn send_bidirectional(
     connection: &Connection,
     message: &Message,
     count_option: Option<u32>,
+    inbox: &mut Vec<Message>,
 ) -> Result<(), ClientError> {
     let (mut send_stream, mut recv_stream) = connection.open_bi().await?;
 
@@ -41,6 +42,8 @@ pub async fn send_bidirectional(
             .map_err(StreamError::from)?;
 
         println!("Received response data: {}", response.get_data());
+
+        inbox.push(response);
 
         sent_count += 1;
 
@@ -71,6 +74,7 @@ pub async fn send_unidirectional(
     connection: &Connection,
     message: &Message,
     count_option: Option<u32>,
+    inbox: &mut Vec<Message>,
 ) -> Result<(), ClientError> {
     let mut send_stream = connection.open_uni().await?;
     let mut recv_stream = connection.accept_uni().await?;
@@ -86,6 +90,8 @@ pub async fn send_unidirectional(
             .map_err(StreamError::from)?;
 
         println!("Received response data: {}", response.get_data());
+
+        inbox.push(response);
 
         sent_count += 1;
 
@@ -117,6 +123,7 @@ pub async fn send_datagram(
     connection: &Connection,
     message: &Message,
     count_option: Option<u32>,
+    inbox: &mut Vec<Message>,
 ) -> Result<(), ClientError> {
     let mut sent_count = 0;
     loop {
@@ -138,6 +145,9 @@ pub async fn send_datagram(
                     .map_err(|e| StreamError::ReadError(ReadStreamError::from(e)))?;
 
                 println!("Received response data: {}", message.get_data());
+
+                inbox.push(message);
+
                 break;
             }
 

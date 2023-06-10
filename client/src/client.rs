@@ -4,6 +4,7 @@ use std::{
 };
 
 use common::{error::ConnectionError, message::Message};
+
 use wtransport::{ClientConfig, Endpoint};
 
 use crate::{
@@ -43,6 +44,7 @@ pub struct PingClientConfig {
 /// The `PingClient` uses the settings from a `PingClientConfig` to control its behavior.
 pub struct PingClient {
     config: PingClientConfig,
+    inbox: Vec<Message>,
 }
 
 impl PingClient {
@@ -54,7 +56,10 @@ impl PingClient {
     /// # Returns
     /// Returns a `PingClient` instance.
     pub fn new(config: PingClientConfig) -> Self {
-        Self { config }
+        Self {
+            config,
+            inbox: vec![],
+        }
     }
 
     /// Asynchronously sends a message to a server using the client's connection settings.
@@ -66,7 +71,7 @@ impl PingClient {
     /// # Returns
     /// * `Result` - An empty `Ok` result if the message is sent successfully, or a `ClientError` if an error occurs.
     pub async fn send_message(
-        &self,
+        &mut self,
         message: &Message,
         times: Option<u32>,
     ) -> Result<(), ClientError> {
@@ -134,16 +139,26 @@ impl PingClient {
 
         match self.config.connection_type {
             PingClientConnectionType::Bidirectional => {
-                send_bidirectional(&connection, message, times).await?;
+                send_bidirectional(&connection, message, times, &mut self.inbox).await?;
             }
             PingClientConnectionType::Unidirectional => {
-                send_unidirectional(&connection, message, times).await?;
+                send_unidirectional(&connection, message, times, &mut self.inbox).await?;
             }
             PingClientConnectionType::Datagram => {
-                send_datagram(&connection, message, times).await?;
+                send_datagram(&connection, message, times, &mut self.inbox).await?;
             }
         }
 
         Ok(())
+    }
+
+    /// Returns the messages received by the client.
+    /// This method is used for testing purposes.
+    ///
+    /// # Returns
+    ///
+    /// Returns a `Vec<Message>` containing the messages received by the client.
+    pub fn get_indbox(&self) -> Vec<Message> {
+        self.inbox.clone()
     }
 }

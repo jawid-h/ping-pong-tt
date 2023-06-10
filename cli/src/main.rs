@@ -62,7 +62,7 @@ async fn main() {
                 retry_timeout_millis: 1000,
             };
 
-            let ping_client = PingClient::new(ping_client_config);
+            let mut ping_client = PingClient::new(ping_client_config);
 
             let times = if ping_count == &0 {
                 None

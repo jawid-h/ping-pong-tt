@@ -1,5 +1,9 @@
-use std::net::{IpAddr, SocketAddr};
+use std::{
+    net::{IpAddr, SocketAddr},
+    time::Duration,
+};
 
+use tokio::time::sleep;
 use wtransport::{tls::Certificate, Endpoint, ServerConfig};
 
 use crate::{
@@ -91,12 +95,184 @@ impl PongServer {
                 println!("Waiting for data from client...");
                 loop {
                     tokio::select! {
-                        _ = handle_bidirectional(&connection) => {}
-                        _ = handle_unidirectional(&connection) => {}
+                        _ = handle_bidirectional(&connection) => {
+                            println!("Connection closed by client");
+                            break;
+                        }
+                        _ = handle_unidirectional(&connection) => {
+                            println!("Connection closed by client");
+                            break;
+                        }
                         _ = handle_datagram(&connection) => {}
                     }
                 }
             });
+
+            // Exit the loop if we are running tests.
+            if cfg!(test) {
+                sleep(Duration::from_millis(200)).await;
+                break Ok(());
+            }
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::env::{self};
+
+    use client::client::{PingClient, PingClientConfig, PingClientConnectionType};
+    use common::message::Message;
+
+    use super::*;
+
+    #[tokio::test]
+    async fn test_integration_send_recieve_bidirectional() {
+        let mut cert_path = env::temp_dir();
+        cert_path.push("cert.pem");
+
+        let mut key_path = env::temp_dir();
+        key_path.push("key.pem");
+
+        let pong_server_config = PongServerConfig {
+            host: "127.0.0.1"
+                .parse()
+                .expect("failed to parse host for the server"),
+            port: 4433,
+            certificate_path: cert_path.to_str().unwrap().to_string(),
+            certificate_key_path: key_path.to_str().unwrap().to_string(),
+        };
+
+        let pong_server = PongServer::new(pong_server_config);
+
+        let ping_client_config = PingClientConfig {
+            host: "127.0.0.1"
+                .parse()
+                .expect("failed to parse host for the server"),
+            port: 4433,
+            connection_type: PingClientConnectionType::Bidirectional,
+            max_retries: 3,
+            retry_timeout_millis: 1000,
+        };
+
+        let mut ping_client = PingClient::new(ping_client_config);
+
+        let times = Some(3);
+
+        let message = Message::new_request("Ping!".to_string());
+
+        let delayed_client_execution = async {
+            sleep(Duration::from_millis(800)).await;
+            ping_client.send_message(&message, times).await
+        };
+
+        let (_, _) = tokio::join!(pong_server.serve(), delayed_client_execution);
+
+        let inbox = ping_client.get_indbox();
+
+        assert_eq!(inbox.len(), 3);
+        for message in inbox {
+            assert_eq!(message.get_data(), "Pong!");
+        }
+    }
+
+    #[tokio::test]
+    async fn test_integration_send_recieve_unidirectional() {
+        let mut cert_path = env::temp_dir();
+        cert_path.push("cert.pem");
+
+        let mut key_path = env::temp_dir();
+        key_path.push("key.pem");
+
+        let pong_server_config = PongServerConfig {
+            host: "127.0.0.1"
+                .parse()
+                .expect("failed to parse host for the server"),
+            port: 4434,
+            certificate_path: cert_path.to_str().unwrap().to_string(),
+            certificate_key_path: key_path.to_str().unwrap().to_string(),
+        };
+
+        let pong_server = PongServer::new(pong_server_config);
+
+        let ping_client_config = PingClientConfig {
+            host: "127.0.0.1"
+                .parse()
+                .expect("failed to parse host for the server"),
+            port: 4434,
+            connection_type: PingClientConnectionType::Unidirectional,
+            max_retries: 3,
+            retry_timeout_millis: 1000,
+        };
+
+        let mut ping_client = PingClient::new(ping_client_config);
+
+        let times = Some(3);
+
+        let message = Message::new_request("Ping!".to_string());
+
+        let delayed_client_execution = async {
+            sleep(Duration::from_millis(800)).await;
+            ping_client.send_message(&message, times).await
+        };
+
+        let (_, _) = tokio::join!(pong_server.serve(), delayed_client_execution);
+
+        let inbox = ping_client.get_indbox();
+
+        assert_eq!(inbox.len(), 3);
+        for message in inbox {
+            assert_eq!(message.get_data(), "Pong!");
+        }
+    }
+
+    #[tokio::test]
+    async fn test_integration_send_recieve_datagram() {
+        let mut cert_path = env::temp_dir();
+        cert_path.push("cert.pem");
+
+        let mut key_path = env::temp_dir();
+        key_path.push("key.pem");
+
+        let pong_server_config = PongServerConfig {
+            host: "127.0.0.1"
+                .parse()
+                .expect("failed to parse host for the server"),
+            port: 4435,
+            certificate_path: cert_path.to_str().unwrap().to_string(),
+            certificate_key_path: key_path.to_str().unwrap().to_string(),
+        };
+
+        let pong_server = PongServer::new(pong_server_config);
+
+        let ping_client_config = PingClientConfig {
+            host: "127.0.0.1"
+                .parse()
+                .expect("failed to parse host for the server"),
+            port: 4435,
+            connection_type: PingClientConnectionType::Datagram,
+            max_retries: 3,
+            retry_timeout_millis: 1000,
+        };
+
+        let mut ping_client = PingClient::new(ping_client_config);
+
+        let times = Some(3);
+
+        let message = Message::new_request("Ping!".to_string());
+
+        let delayed_client_execution = async {
+            sleep(Duration::from_millis(800)).await;
+            ping_client.send_message(&message, times).await
+        };
+
+        let (_, _) = tokio::join!(pong_server.serve(), delayed_client_execution);
+
+        let inbox = ping_client.get_indbox();
+
+        assert_eq!(inbox.len(), 3);
+        for message in inbox {
+            assert_eq!(message.get_data(), "Pong!");
         }
     }
 }
