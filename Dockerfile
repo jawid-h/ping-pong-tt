@@ -26,4 +26,5 @@ WORKDIR /usr/src/app
 
 # Copy over the build artifact from the previous step and set our command to run the binary.
 COPY --from=build /usr/src/app/target/release/cli /usr/local/bin/cli
-CMD ["cli"]
+
+ENTRYPOINT ["cli"]
