@@ -17,6 +17,7 @@ use crate::error::ClientError;
 /// * `connection` - The connection over which the message is sent.
 /// * `message` - The message to be sent.
 /// * `count_option` - Optional argument to limit the number of times the message is sent. If `None`, the message is sent indefinitely.
+/// * `inbox` - A vector of `Message` objects that will be populated with the responses received from the server.
 ///
 /// # Returns
 ///
@@ -64,6 +65,7 @@ pub async fn send_bidirectional(
 /// * `connection` - The connection over which the message is sent.
 /// * `message` - The message to be sent.
 /// * `count_option` - Optional argument to limit the number of times the message is sent. If `None`, the message is sent indefinitely.
+/// * `inbox` - A vector of `Message` objects that will be populated with the responses received from the server.
 ///
 /// # Returns
 ///
@@ -112,6 +114,7 @@ pub async fn send_unidirectional(
 /// * `connection` - The connection over which the message is sent.
 /// * `message` - The message to be sent.
 /// * `count_option` - Optional argument to limit the number of times the message is sent. If `None`, the message is sent indefinitely.
+/// * `inbox` - A vector of `Message` objects that will be populated with the responses received from the server.
 ///
 /// # Returns
 ///
