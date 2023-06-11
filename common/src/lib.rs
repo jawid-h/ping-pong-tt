@@ -3,3 +3,4 @@ pub mod hash;
 pub mod message;
 pub mod serialization;
 pub mod stream;
+pub mod utils;

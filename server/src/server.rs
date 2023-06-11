@@ -118,39 +118,72 @@ mod tests {
 
     use client::client::{PingClient, PingClientConfig, PingClientConnectionType};
     use common::message::Message;
+    use rand::{distributions::Alphanumeric, Rng};
 
     use super::*;
 
-    #[tokio::test]
-    async fn test_integration_send_recieve_bidirectional() {
+    fn setup_certificates() -> (String, String) {
+        let cert_name: String = rand::thread_rng()
+            .sample_iter(&Alphanumeric)
+            .take(7)
+            .map(char::from)
+            .collect();
+
+        let key_name: String = rand::thread_rng()
+            .sample_iter(&Alphanumeric)
+            .take(7)
+            .map(char::from)
+            .collect();
+
         let mut cert_path = env::temp_dir();
-        cert_path.push("cert.pem");
+        cert_path.push(cert_name);
 
         let mut key_path = env::temp_dir();
-        key_path.push("key.pem");
+        key_path.push(key_name);
+
+        let cert_path_string = cert_path
+            .into_os_string()
+            .into_string()
+            .expect("failed to construct certificate file path");
+        let key_path_string = key_path
+            .into_os_string()
+            .into_string()
+            .expect("failed to construct certificate key file path");
+
+        common::utils::gen_certs::gen_certs(cert_path_string.clone(), key_path_string.clone())
+            .expect("failed to generate certificate files");
+
+        (cert_path_string, key_path_string)
+    }
+
+    fn setup_client_server(host: String, port: u16) -> (PongServer, PingClient) {
+        let (cert_path, key_path) = setup_certificates();
 
         let pong_server_config = PongServerConfig {
-            host: "127.0.0.1"
-                .parse()
-                .expect("failed to parse host for the server"),
-            port: 4433,
-            certificate_path: cert_path.to_str().unwrap().to_string(),
-            certificate_key_path: key_path.to_str().unwrap().to_string(),
+            host: host.parse().expect("failed to parse host for the server"),
+            port,
+            certificate_path: cert_path,
+            certificate_key_path: key_path,
         };
 
         let pong_server = PongServer::new(pong_server_config);
 
         let ping_client_config = PingClientConfig {
-            host: "127.0.0.1"
-                .parse()
-                .expect("failed to parse host for the server"),
-            port: 4433,
+            host: host.parse().expect("failed to parse host for the server"),
+            port,
             connection_type: PingClientConnectionType::Bidirectional,
             max_retries: 3,
             retry_timeout_millis: 1000,
         };
 
-        let mut ping_client = PingClient::new(ping_client_config);
+        let ping_client = PingClient::new(ping_client_config);
+
+        (pong_server, ping_client)
+    }
+
+    #[tokio::test]
+    async fn test_integration_send_recieve_bidirectional() {
+        let (pong_server, mut ping_client) = setup_client_server("127.0.0.1".to_string(), 4433);
 
         let times = Some(3);
 
@@ -171,34 +204,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_integration_send_recieve_unidirectional() {
-        let mut cert_path = env::temp_dir();
-        cert_path.push("cert.pem");
-
-        let mut key_path = env::temp_dir();
-        key_path.push("key.pem");
-
-        let pong_server_config = PongServerConfig {
-            host: "127.0.0.1"
-                .parse()
-                .expect("failed to parse host for the server"),
-            port: 4434,
-            certificate_path: cert_path.to_str().unwrap().to_string(),
-            certificate_key_path: key_path.to_str().unwrap().to_string(),
-        };
-
-        let pong_server = PongServer::new(pong_server_config);
-
-        let ping_client_config = PingClientConfig {
-            host: "127.0.0.1"
-                .parse()
-                .expect("failed to parse host for the server"),
-            port: 4434,
-            connection_type: PingClientConnectionType::Unidirectional,
-            max_retries: 3,
-            retry_timeout_millis: 1000,
-        };
-
-        let mut ping_client = PingClient::new(ping_client_config);
+        let (pong_server, mut ping_client) = setup_client_server("127.0.0.1".to_string(), 4434);
 
         let times = Some(3);
 
@@ -219,34 +225,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_integration_send_recieve_datagram() {
-        let mut cert_path = env::temp_dir();
-        cert_path.push("cert.pem");
-
-        let mut key_path = env::temp_dir();
-        key_path.push("key.pem");
-
-        let pong_server_config = PongServerConfig {
-            host: "127.0.0.1"
-                .parse()
-                .expect("failed to parse host for the server"),
-            port: 4435,
-            certificate_path: cert_path.to_str().unwrap().to_string(),
-            certificate_key_path: key_path.to_str().unwrap().to_string(),
-        };
-
-        let pong_server = PongServer::new(pong_server_config);
-
-        let ping_client_config = PingClientConfig {
-            host: "127.0.0.1"
-                .parse()
-                .expect("failed to parse host for the server"),
-            port: 4435,
-            connection_type: PingClientConnectionType::Datagram,
-            max_retries: 3,
-            retry_timeout_millis: 1000,
-        };
-
-        let mut ping_client = PingClient::new(ping_client_config);
+        let (pong_server, mut ping_client) = setup_client_server("127.0.0.1".to_string(), 4435);
 
         let times = Some(3);
 

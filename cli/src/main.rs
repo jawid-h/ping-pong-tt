@@ -1,9 +1,8 @@
 use std::net::IpAddr;
 
 use clap::{Parser, Subcommand};
-use cli::gen_certs;
 use client::client::{PingClient, PingClientConfig, PingClientConnectionType};
-use common::message::Message;
+use common::{message::Message, utils::gen_certs::gen_certs};
 use server::server::{PongServer, PongServerConfig};
 
 #[derive(Parser, Debug)]
@@ -95,7 +94,8 @@ async fn main() {
             pong_server.serve().await.expect("Server failed");
         }
         Some(SubCommand::GenCerts) => {
-            gen_certs();
+            gen_certs("cert.pem".to_string(), "key.pem".to_string())
+                .expect("failed to generate certs");
         }
         None => {}
     }

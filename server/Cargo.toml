@@ -13,3 +13,4 @@ wtransport = { git = "https://github.com/BiagioFesta/wtransport.git" }
 
 [dev-dependencies]
 client = { path = "../client" }
+rand = "0.8.5"
